@@ -61,7 +61,13 @@ with
             mj.*,
             r.return_id,
             coalesce(r.qty_returned, 0)                                        as qty_returned,
-            mj.subtotal - ((mj.quantity + coalesce(r.qty_returned, 0)) * mj.modal_barang) as pnl
+            
+            case 
+                when 
+                    quantity = qty_returned then 0
+                else 
+                    mj.subtotal - ((mj.quantity + coalesce(r.qty_returned, 0)) * mj.modal_barang) 
+            end as pnl
         from
             modal_jual mj
         left join
@@ -69,4 +75,5 @@ with
             on mj.pnl_id = r.pnl_id
     )
 
-    select * from pnl
+    select *
+    from pnl
