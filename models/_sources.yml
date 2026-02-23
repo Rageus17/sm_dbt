@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: toko_db
+    description: "Raw data from toko database backup"
+    database: toko_adb  # Your database name
+    # schema: public         # Schema where restored tables are
+    
+    tables:
+      - name: transaksi
+      - name: barang
+      - name: inventory_history
+      - name: transaksi_return_details
+      - name: transaction_payments
+      - name: modal_price_change_log
+      - name: inventory
