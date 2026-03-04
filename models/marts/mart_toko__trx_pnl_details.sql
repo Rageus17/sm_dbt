@@ -4,38 +4,55 @@ with
     modal_log as (select * from {{ ref('mart_toko__modal_change_log') }}),
     return_details as (select * from {{ source('toko_db', 'transaksi_return_details') }}),
 
-    -- Fallback: earliest modal per item for sales that happened
-    -- before any modal price was ever recorded for that item
+    -- WAC: Weighted Average Cost per item, dihitung kumulatif dari setiap pembelian.
+    -- Lebih akurat dari ASOF karena memperhitungkan sisa stok batch lama
+    -- yang masih ada saat batch baru datang.
+    -- Formula: SUM(qty × unit_cost, s/d t) / SUM(qty, s/d t)
+    modal_wac as (
+        select
+            item_id,
+            changed_at,
+            sum(modal_barang * quantity) over (partition by item_id order by changed_at)
+            / sum(quantity) over (partition by item_id order by changed_at) as wac
+        from
+            modal_log
+        where
+            quantity is not null
+    ),
+
+    -- Fallback: harga modal terlama dari SEMUA sumber (termasuk harga awal sistem
+    -- di tabel inventory dan perubahan manual), untuk 2 kasus:
+    -- 1. Penjualan terjadi sebelum ada data pembelian tercatat
+    -- 2. Slow moving item — tidak ada MASUK di inventory_history sama sekali,
+    --    tapi masih punya harga modal bawaan sistem (inventory table / modal_log3)
     modal_earliest as (
         select
             item_id,
             argMin(modal_barang, changed_at) as modal_barang,
-            min(changed_at) as earliest_changed_at
+            min(changed_at)                  as earliest_changed_at
         from
             modal_log
         group by item_id
     ),
 
-    -- ASOF JOIN replaces the old: modal_jual → modal_jual_tz →
-    -- semi1 → semi2 → final1 → final2 → final (6 CTEs + 2 window fns)
-    -- It finds the most recent modal price at or before the sale date per item.
-    -- coalesce handles the fallback when no prior modal price exists.
+    -- ASOF JOIN ke modal_wac menggantikan join langsung ke modal_log.
+    -- Mengambil WAC terbaru pada atau sebelum tanggal jual per item.
     modal_jual as (
         select
             td.transaksi_id,
             td.item_id,
-            td.nama                         as item_name,
-            td.item_qty                     as quantity,
-            td.harga                        as price,
-            td.item_qty * td.harga          as subtotal,
-            coalesce(m.modal_barang, me.modal_barang) as modal_barang,
+            td.nama                              as item_name,
+            td.item_qty                          as quantity,
+            td.harga_satuan                      as price,
+            td.item_qty * td.harga_satuan        as subtotal,
+            coalesce(m.wac, me.modal_barang)     as modal_barang,
             td.created_at,
             coalesce(m.changed_at, me.earliest_changed_at) as changed_at,
-            transaksi_id || '-' || td.item_id         as pnl_id
+            transaksi_id || '-' || td.item_id    as pnl_id
         from
             transaksi_details td
         asof left join
-            modal_log m
+            modal_wac m
             on td.item_id = m.item_id
             and td.created_at >= m.changed_at
         left join

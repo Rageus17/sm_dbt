@@ -6,11 +6,12 @@ with
     modal_log1 as (
 select
     item_id,
-    harga / quantity as modal_barang,
+    CAST(quantity,               'Nullable(Float64)') as quantity,
+    CAST(harga / quantity,       'Nullable(Float64)') as modal_barang,
     changed_at
-from 
+from
     inventory_history
-where 
+where
     change_type = 'MASUK'
     and metode_bayar != 'ADJUSTMENT'
     and metode_bayar != 'RETURN'
@@ -20,17 +21,19 @@ where
 modal_log2 as (
 select
     item_id,
-    new_modal_price as modal_barang,
+    CAST(null,            'Nullable(Float64)') as quantity,
+    CAST(new_modal_price, 'Nullable(Float64)') as modal_barang,
     changed_at
 from
     modal_price_change_log
-order by 
+order by
     changed_at desc),
 
 modal_log3 as (
 select
     item_id,
-    modal_barang,
+    CAST(null,         'Nullable(Float64)') as quantity,
+    CAST(modal_barang, 'Nullable(Float64)') as modal_barang,
     last_updated
 from
     inventory),

@@ -14,7 +14,7 @@ with
         JSONExtractString(item, 'id')    as item_id,
         JSONExtractFloat(item, 'qty')    as item_qty,
         JSONExtractString(item, 'nama')  as nama,
-        JSONExtractInt(item, 'harga')    as harga
+        JSONExtractInt(item, 'harga')    as harga_satuan
     from
         transaksi t
     array join

@@ -8,7 +8,7 @@ with
             item_id,
             nama as item_name,
             sum(item_qty) as total_qty_sold,
-            sum(item_qty * harga) as total_revenue,
+            sum(item_qty * harga_satuan) as total_revenue,
             count(distinct transaksi_id) as total_transactions
         from
             transaksi_details
@@ -32,7 +32,7 @@ with
             item_id,
             nama as item_name,
             sum(item_qty) as total_qty_sold,
-            sum(item_qty * harga) as total_revenue,
+            sum(item_qty * harga_satuan) as total_revenue,
             count(distinct transaksi_id) as total_transactions
         from
             transaksi_details

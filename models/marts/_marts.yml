@@ -1,0 +1,111 @@
+version: 2
+
+models:
+  - name: mart_toko__modal_change_log
+    description: |
+      Log perubahan modal (harga pokok) per item dari 3 sumber:
+      1. inventory_history (MASUK) — harga beli aktual per unit dari setiap restock
+      2. modal_price_change_log — perubahan harga manual oleh admin
+      3. inventory — snapshot harga modal terkini dari tabel inventory
+
+      Kolom `quantity` hanya terisi untuk sumber (1) karena pembelian aktual memiliki data
+      kuantitas. Sumber manual dan snapshot tidak memiliki konteks kuantitas, sehingga diisi null.
+      Kolom ini digunakan oleh mart_toko__trx_pnl_details untuk menghitung WAC.
+    columns:
+      - name: item_id
+        description: ID barang
+      - name: quantity
+        description: |
+          Jumlah unit yang dibeli pada event ini. Hanya terisi untuk sumber inventory_history
+          (pembelian aktual). Null untuk perubahan harga manual dan snapshot inventory.
+      - name: modal_barang
+        description: Harga modal per unit pada event ini (harga beli / quantity untuk pembelian aktual)
+      - name: changed_at
+        description: Waktu event perubahan modal terjadi
+
+  - name: mart_toko__trx_pnl_details
+    description: |
+      Detail PnL (Profit & Loss) per item per transaksi penjualan.
+
+      ## Metode Perhitungan HPP: Weighted Average Cost (WAC)
+
+      HPP (Harga Pokok Penjualan) dihitung menggunakan metode WAC kumulatif, bukan harga
+      beli terbaru (ASOF) dan bukan FIFO murni.
+
+      ### Kenapa WAC, bukan ASOF atau FIFO?
+
+      **ASOF (sebelumnya):** Mengambil harga beli terbaru sebelum tanggal jual. Tidak akurat
+      jika masih ada sisa stok dari batch lama saat batch baru datang — HPP jadi terlalu tinggi
+      karena menggunakan harga baru untuk semua unit, termasuk yang masih dari stok lama.
+
+      **True FIFO:** Paling akurat secara akuntansi — konsumsi stok urut dari batch terlama.
+      Namun membutuhkan tracking kuantitas per batch secara rekursif, sangat kompleks di SQL.
+
+      **WAC (dipakai):** Rata-rata tertimbang kumulatif dari semua pembelian per item hingga
+      tanggal jual. Jauh lebih akurat dari ASOF saat ada sisa stok lama, dan mendekati hasil
+      FIFO untuk pola restocking reguler.
+
+      ### Formula WAC:
+      ```
+      WAC pada tanggal t =
+          SUM(unit_cost × quantity, semua pembelian item ≤ t)
+          / SUM(quantity, semua pembelian item ≤ t)
+      ```
+
+      ### Contoh:
+      | Tanggal | Event         | Qty | Harga  | WAC setelah event | HPP Jual (WAC) |
+      |---------|---------------|-----|--------|-------------------|----------------|
+      | Tgl 3   | Beli          | 10  | 50k/unit | 50k             | —              |
+      | Tgl 4   | Jual 7 unit   | 7   | 55k    | —                 | 7 × 50k = 350k |
+      | Tgl 5   | Beli          | 5   | 52k/unit | (500k+260k)/15 = 50.67k | —     |
+      | Tgl 6   | Jual 6 unit   | 6   | 56k    | —                 | 6 × 50.67k ≈ 304k |
+
+      ASOF pada Tgl 6 menghasilkan 6 × 52k = 312k (terlalu tinggi).
+      True FIFO = 3×50k + 3×52k = 306k. WAC ≈ 304k (sangat dekat dengan FIFO).
+
+      ### Keterbatasan WAC Kumulatif:
+      WAC ini tidak mengurangi "bobot" dari stok yang sudah terjual. Jika ada jeda panjang
+      antara pembelian (misal beli lagi setelah 1 tahun dengan harga sangat berbeda), rata-rata
+      bisa terdistorsi oleh pembelian lama. Untuk toko dengan restocking rutin, ini tidak
+      menjadi masalah signifikan.
+
+      ## Logika Return
+      Jika seluruh quantity item di-return (quantity = qty_returned), PnL item tersebut = 0.
+      Jika partial return, qty_returned mengurangi quantity efektif dalam perhitungan PnL.
+
+    columns:
+      - name: pnl_id
+        description: Unique ID gabungan transaksi_id dan item_id (format — transaksi_id-item_id)
+      - name: transaksi_id
+        description: ID transaksi penjualan
+      - name: item_id
+        description: ID barang yang dijual
+      - name: item_name
+        description: Nama barang
+      - name: quantity
+        description: Jumlah unit yang dijual dalam transaksi ini
+      - name: price
+        description: Harga jual per unit (harga_satuan dari data transaksi)
+      - name: subtotal
+        description: Total pendapatan dari item ini (quantity × price)
+      - name: modal_barang
+        description: |
+          HPP per unit menggunakan WAC kumulatif pada saat penjualan.
+          Fallback bertingkat:
+          1. WAC dari pembelian aktual (inventory_history MASUK)
+          2. Harga modal awal sistem / perubahan manual (inventory table atau modal_price_change_log)
+          Fallback (2) menangani slow moving item yang tidak pernah tercatat di inventory_history
+          tapi masih punya harga modal bawaan sistem.
+      - name: created_at
+        description: Waktu transaksi penjualan terjadi
+      - name: changed_at
+        description: Waktu WAC yang digunakan dihitung (tanggal pembelian terakhir ≤ created_at)
+      - name: return_id
+        description: ID return jika ada pengembalian barang, null jika tidak ada return
+      - name: qty_returned
+        description: Jumlah unit yang dikembalikan. 0 jika tidak ada return.
+      - name: pnl
+        description: |
+          Profit/Loss item ini = subtotal − (quantity_efektif × modal_barang).
+          Quantity efektif memperhitungkan return: (quantity + qty_returned).
+          Jika semua unit di-return (quantity = qty_returned), pnl = 0.
