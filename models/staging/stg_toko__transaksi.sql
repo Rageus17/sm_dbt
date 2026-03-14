@@ -1,5 +1,13 @@
 with
-    transaksi as (select * from {{source('toko_db','transaksi')}})
+    transaksi as (select * from {{source('toko_db','transaksi')}}),
+
+    deduped as (
+        select 
+            *,
+            row_number() over (partition by transaksi_id order by _peerdb_synced_at desc) as rn
+        from 
+            transaksi
+    )
 
     select 
         id, 
@@ -23,4 +31,5 @@ with
         outstanding_balance,
         created_at
     from 
-        transaksi
+        deduped
+    where  rn = 1
