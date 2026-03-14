@@ -14,3 +14,9 @@ sources:
       - name: transaction_payments
       - name: modal_price_change_log
       - name: inventory
+      - name: delivery_later
+      - name: delivery_details
+      - name: public_purchase_orders
+      - name: public_purchase_order_items
+      - name: public_po_receiving_items
+      - name: public_po_receiving_log
