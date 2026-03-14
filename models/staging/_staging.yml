@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: stg_toko__transaksi
+    columns:
+      - name: transaksi_id
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_toko__delivery_details
+    columns:
+      - name: delivery_detail_id
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_toko__delivery_later
+    columns:
+      - name: id
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_toko__inventory_history
+    columns:
+      - name: inv_id
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_toko__inventory
+    columns:
+      - name: item_id
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_toko__modal_change_log
+    columns:
+      - name: modal_log_id
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_toko__payment
+    columns:
+      - name: payment_id
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_toko__transaksi_return_details
+    columns:
+      - name: transaksi_id
+        tests:
+          - not_null
+      - name: item_id
+        tests:
+          - not_null
