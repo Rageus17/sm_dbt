@@ -1,5 +1,5 @@
 with
-    transaksi as (select * from {{source('toko_db','transaksi')}}),
+    transaksi as (select * from {{source('toko_db','public_transaksi')}}),
 
     deduped as (
         select 
@@ -25,11 +25,14 @@ with
         total_returned,
         subtotal,
         diskon_nominal,
-        customer_id,
+        nullIf(customer_id,0) as customer_id,
         payment_status,
         total_paid,
         outstanding_balance,
-        created_at
-    from 
+        created_at,
+        nullIf(referral_id,0) as referral_id,
+        is_cancelled,
+        tukang_id
+    from
         deduped
     where  rn = 1
