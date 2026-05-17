@@ -1,24 +1,8 @@
 with
-
+    transaksi as (select * from {{ref('stg_toko__transaksi')}}),
     transaksi_details as (select * from {{ ref('int_toko__transaksi') }}),
     modal_log as (select * from {{ ref('mart_toko__modal_change_log') }}),
-    return_details as (select * from {{ source('toko_db', 'transaksi_return_details') }}),
-
-    -- WAC: Weighted Average Cost per item, dihitung kumulatif dari setiap pembelian.
-    -- Lebih akurat dari ASOF karena memperhitungkan sisa stok batch lama
-    -- yang masih ada saat batch baru datang.
-    -- Formula: SUM(qty × unit_cost, s/d t) / SUM(qty, s/d t)
-    modal_wac as (
-        select
-            item_id,
-            changed_at,
-            sum(modal_barang * quantity) over (partition by item_id order by changed_at)
-            / sum(quantity) over (partition by item_id order by changed_at) as wac
-        from
-            modal_log
-        where
-            quantity is not null
-    ),
+    return_details as (select * from {{ source('toko_db', 'public_transaksi_return_details') }}),
 
     -- Fallback: harga modal terlama dari SEMUA sumber (termasuk harga awal sistem
     -- di tabel inventory dan perubahan manual), untuk 2 kasus:
@@ -35,31 +19,35 @@ with
         group by item_id
     ),
 
-    -- ASOF JOIN ke modal_wac menggantikan join langsung ke modal_log.
-    -- Mengambil WAC terbaru pada atau sebelum tanggal jual per item.
+    -- FIFO: ASOF JOIN langsung ke modal_log.
+    -- Mengambil harga modal batch pertama yang tersedia pada atau sebelum tanggal jual.
     modal_jual as (
         select
             td.transaksi_id,
-            td.item_id,
-            td.nama                              as item_name,
-            td.item_qty                          as quantity,
-            td.harga_satuan                      as price,
-            td.item_qty * td.harga_satuan        as subtotal,
-            coalesce(m.wac, me.modal_barang)     as modal_barang,
+            
+            td.item_id as item_id,
+            td.nama                                       as item_name,
+            td.item_qty                                   as quantity,
+            td.harga_satuan                               as price,
+            td.item_qty * td.harga_satuan                 as subtotal,
+            coalesce(CAST(td.modal_barang, 'Nullable(Float64)'), CAST(m.modal_barang, 'Nullable(Float64)'), CAST(me.modal_barang, 'Nullable(Float64)')) as modal_barang,
             td.created_at,
             coalesce(m.changed_at, me.earliest_changed_at) as changed_at,
-            transaksi_id || '-' || td.item_id    as pnl_id
+            transaksi_id || '-' || td.item_id             as pnl_id
         from
             transaksi_details td
         asof left join
-            modal_wac m
+            modal_log m
             on td.item_id = m.item_id
             and td.created_at >= m.changed_at
         left join
             modal_earliest me
             on td.item_id = me.item_id
+        
         where
-            td.customer_id not in (788, 178, 7, 6)
+        td.transaksi_id not in (select transaksi_id from transaksi 
+        where customer_id in (788, 7, 6, 1162, 178, 194, 576, 821, 1140, 1344, 1354, 1435)
+        or is_cancelled = True)
     ),
 
     return_barang as (
@@ -78,18 +66,21 @@ with
             mj.*,
             r.return_id,
             coalesce(r.qty_returned, 0)                                        as qty_returned,
+            mj.price * (mj.quantity - coalesce(r.qty_returned,0)) as nett_total,
             
             case 
                 when 
                     quantity = qty_returned then 0
                 else 
-                    mj.subtotal - ((mj.quantity + coalesce(r.qty_returned, 0)) * mj.modal_barang) 
+                    (mj.price-mj.modal_barang) * (mj.quantity - coalesce(r.qty_returned,0))
+                    -- mj.subtotal - ((mj.quantity + coalesce(r.qty_returned, 0)) * mj.modal_barang) 
             end as pnl
         from
             modal_jual mj
         left join
             return_barang r
             on mj.pnl_id = r.pnl_id
+        
     )
 
     select *
