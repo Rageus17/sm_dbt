@@ -26,6 +26,8 @@ select
     changed_at
 from
     modal_price_change_log
+where 
+    change_type = 'modal_change'
 order by
     changed_at desc),
 
