@@ -7,16 +7,54 @@ sources:
     # schema: public         # Schema where restored tables are
     
     tables:
-      - name: transaksi
-      - name: barang
-      - name: inventory_history
-      - name: transaksi_return_details
-      - name: transaction_payments
-      - name: modal_price_change_log
-      - name: inventory
-      - name: delivery_later
-      - name: delivery_details
+      - name: public_transaksi
+        description: "all the transaction occured"
+        columns:
+        - name: items
+          description: "json including all items"
+        - name: subtotal
+          description: "total transaction before discount"
+        - name: diskon_nominal
+          description: "discount for the transaction"
+        - name: total
+          description: "total transaction after discount"
+      - name: public_barang
+        description: "all the records for all the items"
+        columns:
+        - name: harga_jual
+          description: "selling price"
+        - name: base_item_id
+          description: "Reference item used as the source unit in a unit-of-measure conversion (e.g., the 'kg' item when converting to 'g')"
+        - name: conversion_factor
+          description: "Multiplicative factor applied to convert one unit of the base item into the target unit (e.g., 1000 to convert kg → g)"
+
+      - name: public_inventory_history
+        description: "all the historical inventory movement including buy-sell transaction, return transaction, and adjustment"
+      - name: public_transaksi_return_details
+        description: "detail to all the return items transaction"
+      
+      - name: public_transaction_payments
+        description: "all the historical payment for all the transaction"
+      - name: public_modal_price_change_log
+        description: "when admin change the price including the sell price, minimum selling price, and buying price"
+      - name: public_inventory
+      - name: public_delivery_later
+        description: "all the transaction that will be delivered by our shop"
+      - name: public_delivery_details
+        description: "all the delivery detail including the items that delivered"
       - name: public_purchase_orders
+        description: "PO that we will create to our suppliers"
       - name: public_purchase_order_items
+        description: "all the items that we ordered from our suppliers"
+      - columns:
+        name: quantity_ordered
+        description: "how many item we order?"
+        name: quantity_delivered
+        description: "how many item that we already receive from the suppliers" 
       - name: public_po_receiving_items
+        description: "when and how many we receive items from our suppliers"
       - name: public_po_receiving_log
+      - name: public_inventory_adjustment_log
+        description: "when there are stock opname and we need to change the quantity of the items, it will be log here"
+      - name: public_operational_expenses
+        description: "all our operational expense (not including paying the supplier)"
