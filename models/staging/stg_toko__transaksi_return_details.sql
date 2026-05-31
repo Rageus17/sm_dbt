@@ -1,5 +1,5 @@
 with 
-    return_details as (select * from {{source('toko_db','transaksi_return_details')}})
+    return_details as (select * from {{source('toko_db','public_transaksi_return_details')}})
 
     select 
         transaksi_id,

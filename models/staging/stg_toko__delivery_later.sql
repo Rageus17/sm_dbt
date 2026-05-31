@@ -1,11 +1,11 @@
 with 
-    delivery_later as (select * from {{source('toko_db','delivery_later')}}),
+    delivery_later as (select * from {{source('toko_db','public_delivery_later')}}),
 
 ranked as (
   select
     *,
     row_number() over (
-      partition by trx_id, item_id
+      partition by id
       order by _peerdb_synced_at desc
     ) as rn
   from delivery_later
@@ -25,4 +25,4 @@ select
     qty_delivered,
     status,
     created_at
- from final
+from final

@@ -13,7 +13,7 @@ with
         notes,
         created_by,
         created_at,
-        updated_at,
+         updated_at,
         sent_at,
         completed_at,
         cancelled_at

@@ -11,7 +11,7 @@ with
         quantity_received,
         inv_id,
         created_at
-    from 
+    from
         pri
     where 
         rn = 1

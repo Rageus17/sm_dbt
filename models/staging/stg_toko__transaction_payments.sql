@@ -1,7 +1,7 @@
 with 
     payment as (select *,
     row_number() over (partition by id order by _peerdb_synced_at desc) as rn
-     from {{source('toko_db','transaction_payments')}})
+     from {{source('toko_db','public_transaction_payments')}})
 
     select 
         id as transaction_payment_id,

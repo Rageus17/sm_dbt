@@ -1,5 +1,5 @@
 with
-    inventory as (select * from {{source('toko_db','inventory')}}),
+    inventory as (select * from {{source('toko_db','public_inventory')}}),
 
     deduped as (
         select
@@ -11,6 +11,7 @@ with
 
 select
     item_id,
+    quantity,
     modal_barang,
     last_updated
 from

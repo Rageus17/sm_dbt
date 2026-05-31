@@ -13,7 +13,7 @@ with
         subtotal,
         notes,
         created_at
-    from 
+    from
         poi
     where 
         rn = 1
