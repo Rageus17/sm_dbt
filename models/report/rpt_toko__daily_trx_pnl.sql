@@ -15,7 +15,7 @@ with
     )
 
     select 
-        date_trunc('day',created_at) as month_id,
+        toDate(created_at, 'Asia/Jakarta') as day_id,
         sum(nett_total) as total_transaksi,
         sum(diskon_nominal) as diskon_transaksi,
         sum(pnl) as pnl
