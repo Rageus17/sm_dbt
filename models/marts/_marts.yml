@@ -109,3 +109,59 @@ models:
           Profit/Loss item ini = subtotal − (quantity_efektif × modal_barang).
           Quantity efektif memperhitungkan return: (quantity + qty_returned).
           Jika semua unit di-return (quantity = qty_returned), pnl = 0.
+
+  - name: mart_toko__dead_stock
+    description: |
+      Dead stock analysis per item — barang yang sudah dibeli (stok masuk) tapi sedikit atau
+      tidak ada penjualan, sehingga modal tertahan di inventaris.
+
+      estimated_stock = qty_purchased - qty_sold + qty_returned_by_customer
+
+      Hanya menampilkan item dengan estimated_stock > 0.
+      Diurutkan dari estimated_stock_value_idr terbesar (modal paling besar tertahan).
+
+      ## Sumber Data
+      - stock_in: inventory_history MASUK (excl. ADJUSTMENT & RETURN) — pembelian aktual
+      - sales_out: int_toko__transaksi (excl. test customers 788, 178, 7, 6) — qty terjual
+      - returns: transaksi_return_details — retur dari customer (ditambahkan kembali ke stok)
+      - current_cost: inventory — modal_barang terkini per item
+
+    columns:
+      - name: item_id
+        description: ID barang
+      - name: item_name
+        description: Nama barang dari data transaksi. NULL jika belum pernah terjual.
+      - name: qty_purchased
+        description: Total unit yang diterima melalui pembelian (inventory_history MASUK)
+      - name: qty_sold
+        description: Total unit terjual (gross, sebelum dikurangi retur)
+      - name: qty_returned_by_customer
+        description: Unit yang dikembalikan oleh customer
+      - name: estimated_stock
+        description: Estimasi stok tersisa = qty_purchased - qty_sold + qty_returned_by_customer
+      - name: first_received_at
+        description: Tanggal pertama kali stok diterima
+      - name: last_received_at
+        description: Tanggal terakhir stok diterima
+      - name: first_sold_at
+        description: Tanggal pertama kali terjual. NULL jika belum pernah terjual.
+      - name: last_sold_at
+        description: Tanggal terakhir terjual. NULL jika belum pernah terjual.
+      - name: total_transactions
+        description: Jumlah transaksi penjualan yang melibatkan item ini
+      - name: modal_barang
+        description: Harga modal per unit saat ini (IDR)
+      - name: estimated_stock_value_idr
+        description: Nilai modal tertahan = estimated_stock × modal_barang (IDR)
+      - name: days_since_last_sale
+        description: Hari sejak penjualan terakhir. NULL jika belum pernah terjual.
+      - name: days_since_last_purchase
+        description: Hari sejak terakhir kali stok diterima
+      - name: dead_stock_status
+        description: |
+          Klasifikasi kondisi stok:
+          - never_sold: belum pernah terjual sama sekali
+          - critical: tidak terjual > 90 hari
+          - warning: tidak terjual > 30 hari
+          - watch: tidak terjual > 14 hari
+          - active: terjual dalam 14 hari terakhir (tapi masih ada sisa stok)
