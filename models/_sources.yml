@@ -46,11 +46,11 @@ sources:
         description: "PO that we will create to our suppliers"
       - name: public_purchase_order_items
         description: "all the items that we ordered from our suppliers"
-      - columns:
-        name: quantity_ordered
-        description: "how many item we order?"
-        name: quantity_delivered
-        description: "how many item that we already receive from the suppliers" 
+        columns:
+          - name: quantity_ordered
+            description: "how many item we order?"
+          - name: quantity_delivered
+            description: "how many item that we already receive from the suppliers"
       - name: public_po_receiving_items
         description: "when and how many we receive items from our suppliers"
       - name: public_po_receiving_log
