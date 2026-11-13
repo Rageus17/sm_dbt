@@ -18,3 +18,6 @@ with
         rn = 1)
 
         select * from final
+        {% if var('start_date', none) is not none %}
+        where adjusted_at >= '{{ var('start_date') }}'
+        {% endif %}

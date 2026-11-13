@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: toko_db
     description: "Raw data from toko database backup"
-    database: toko_adb  # Your database name
+    database: "{{ var('source_database', 'toko_adb') }}"
     # schema: public         # Schema where restored tables are
     
     tables:
@@ -54,7 +54,16 @@ sources:
       - name: public_po_receiving_items
         description: "when and how many we receive items from our suppliers"
       - name: public_po_receiving_log
+      - name: public_tanda_terima
+        description: "tanda terima tagihan supplier; kembali_tanggal = tanggal balik / jadwal bayar"
+      - name: public_tanda_terima_items
+        description: "receiving log yang masuk ke sebuah tanda terima"
+      - name: public_supplier_payments
+        description: "pembayaran aktual ke supplier, link ke tanda_terima_id atau po_id"
       - name: public_inventory_adjustment_log
         description: "when there are stock opname and we need to change the quantity of the items, it will be log here"
       - name: public_operational_expenses
         description: "all our operational expense (not including paying the supplier)"
+      - name: public_item_qty_alert
+      - name: public_product_cat
+        description: "katalog warna cat per item; hanya ada di ch_aksata, dipakai model yang aktif di target aksata saja"

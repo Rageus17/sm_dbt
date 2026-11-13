@@ -11,3 +11,6 @@ with
         returned_by
     from 
         return_details
+    {% if var('start_date', none) is not none %}
+    where returned_at >= '{{ var('start_date') }}'
+    {% endif %}

@@ -9,14 +9,17 @@ with
         harga,
         harga / quantity as modal_barang,
         changed_at,
-        supplier_mapping.supplier_id
+        inv_hist.metode_bayar,
+        supplier_id,
+        
+        supplier_name
     from 
         inv_hist
-    left join
-        supplier_mapping 
-    on 
-        inv_hist.supplier_name = supplier_mapping.supplier_name
+    -- left join
+    --     supplier_mapping 
+    -- on 
+    --     inv_hist.supplier_name = supplier_mapping.supplier_name
     where 
         change_type = 'MASUK'
     and
-        metode_bayar != 'ADJUSTMENT'
+        metode_bayar not in ('ADJUSTMENT','RETURN','INTERNAL')

@@ -12,3 +12,6 @@ with
         change_type
     from 
         modal_change_log
+    {% if var('start_date', none) is not none %}
+    where changed_at >= '{{ var('start_date') }}'
+    {% endif %}

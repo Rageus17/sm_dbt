@@ -37,3 +37,10 @@ models:
 seeds:
   dbt_toko:
     +enabled: true
+
+vars:
+  source_database: 'toko_adb'  # override: --vars '{source_database: nama_db_lain}'
+  start_date:                   # override: --vars '{start_date: "2026-02-14"}' — leave empty for no filter
+  item_mapping: 'item_mapping_sm'  # override: --vars '{item_mapping: item_mapping_cm}'
+
+  

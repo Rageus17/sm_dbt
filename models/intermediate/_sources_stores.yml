@@ -1,0 +1,38 @@
+version: 2
+
+# Setiap toko dibangun sebagai target dbt terpisah, masing-masing ke schema-nya
+# sendiri (lihat README: dev->dbt_toko, cm->dbt_cm, sk->dbt_sk, aksata->dbt_cat).
+# ref() cuma bisa "lihat" schema milik target yang lagi jalan, jadi untuk model
+# lintas-toko kita definisikan tiap schema sebagai source terpisah di sini.
+sources:
+  - name: store_toko
+    description: "Schema hasil build target 'dev' (toko utama)"
+    schema: dbt_toko
+    tables:
+      - name: int_toko__item_descriptions
+      - name: stg_toko__inventory
+      - name: mart_toko__cash_in_out
+
+  - name: store_cm
+    description: "Schema hasil build target 'cm'"
+    schema: dbt_cm
+    tables:
+      - name: int_toko__item_descriptions
+      - name: stg_toko__inventory
+      - name: mart_toko__cash_in_out
+
+  - name: store_sk
+    description: "Schema hasil build target 'sk'"
+    schema: dbt_sk
+    tables:
+      - name: int_toko__item_descriptions
+      - name: stg_toko__inventory
+      - name: mart_toko__cash_in_out
+
+  - name: store_aksata
+    description: "Schema hasil build target 'aksata'"
+    schema: dbt_cat
+    tables:
+      - name: int_toko__item_descriptions
+      - name: stg_toko__inventory
+      - name: mart_toko__cash_in_out
