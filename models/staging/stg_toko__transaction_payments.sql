@@ -15,4 +15,7 @@ with
         payment
     where 
         rn = 1
+    {% if var('start_date', none) is not none %}
+    and payment_date >= '{{ var('start_date') }}'
+    {% endif %}
 

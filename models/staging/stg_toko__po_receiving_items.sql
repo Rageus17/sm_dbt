@@ -9,9 +9,14 @@ with
         poi_id,
         item_id,
         quantity_received,
+        harga_satuan,
+        quantity_received*harga_satuan as subtotal,
         inv_id,
         created_at
     from
         pri
     where 
         rn = 1
+    {% if var('start_date', none) is not none %}
+    and created_at >= '{{ var('start_date') }}'
+    {% endif %}

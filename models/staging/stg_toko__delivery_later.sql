@@ -26,3 +26,6 @@ select
     status,
     created_at
 from final
+{% if var('start_date', none) is not none %}
+where created_at >= '{{ var('start_date') }}'
+{% endif %}

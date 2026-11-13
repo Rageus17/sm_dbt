@@ -18,6 +18,7 @@ with
             inv_id,
             nullIf(trx_id, '')        as trx_id,
             nullIf(unit_type, '')     as unit_type,
+            supplier_id,
             nullIf(supplier_name, '') as supplier_name,
 
             nullIf(old_qty, 0) as old_qty,
@@ -26,6 +27,9 @@ with
             inventory_hist
         where
             rn = 1
+    {% if var('start_date', none) is not none %}
+    and changed_at >= '{{ var('start_date') }}'
+    {% endif %}
     )
 
 select * from final

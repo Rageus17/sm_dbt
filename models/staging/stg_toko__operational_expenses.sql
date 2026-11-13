@@ -11,3 +11,6 @@ with
         created_at
     from
         operational_expense
+    {% if var('start_date', none) is not none %}
+    where created_at >= '{{ var('start_date') }}'
+    {% endif %}

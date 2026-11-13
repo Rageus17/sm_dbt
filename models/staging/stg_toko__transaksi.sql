@@ -35,4 +35,7 @@ with
         tukang_id
     from
         deduped
-    where  rn = 1
+    where rn = 1
+    {% if var('start_date', none) is not none %}
+    and created_at >= '{{ var('start_date') }}'
+    {% endif %}

@@ -1,6 +1,17 @@
 version: 2
 
 models:
+  - name: stg_toko__product_cat
+    columns:
+      - name: product_cat_id
+        tests:
+          - unique
+          - not_null
+      - name: item_id
+        tests:
+          - unique
+          - not_null
+
   - name: stg_toko__transaksi
     columns:
       - name: transaksi_id

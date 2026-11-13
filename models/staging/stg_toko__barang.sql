@@ -1,7 +1,15 @@
-with 
-    barang as (select * from {{source('toko_db','public_barang')}})
+with
+    barang as (select * from {{source('toko_db','public_barang')}}),
 
-    select  
+    deduped as (
+        select
+            *,
+            row_number() over (partition by item_id order by _peerdb_synced_at desc) as rn
+        from
+            barang
+    )
+
+    select
         item_id,
         nama_barang,
         harga_jual,
@@ -9,7 +17,9 @@ with
         conversion_factor,
         inputted_by,
         min_harga_jual,
-        is_deleted
+        is_deleted,
+        descriptions
 
-    from 
-    barang  
+    from
+        deduped
+    where rn = 1

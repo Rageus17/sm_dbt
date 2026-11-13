@@ -44,12 +44,14 @@ with
             inventory_history
         where 
             supplier_id not in (16,37,70,47)
+            and change_type = 'MASUK'
+            and metode_bayar not in ( 'ADJUSTMENT','CANCEL','RETURN')
         group by 1
     ),
 
     final as (
         select 
-            ci.month_id,
+            ci.month_id as month_id,
             trx_in_rp,
             cashflow_in_paid,
             cashflow_out
@@ -64,3 +66,4 @@ with
     )
 
     select * from final
+    order by month_id desc

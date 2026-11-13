@@ -27,3 +27,6 @@ final as (
         is_canceled
     from 
         final
+    {% if var('start_date', none) is not none %}
+    where delivered_at >= '{{ var('start_date') }}'
+    {% endif %}
